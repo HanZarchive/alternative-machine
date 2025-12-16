@@ -1,360 +1,3 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Alternative Machine</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Text+Me+One:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div id="control-panel">
-        <h1>Tolerance of REPETITION</h1>
-        
-        <div class="input-group">
-            <label>Input a word you like:</label>
-            <input type="text" id="wordInput" value="WORK" maxlength="20">
-        </div>
-
-        <div id="live-preview">
-            <div id="preview-text" class="preview-content"></div>
-        </div>
-
-        <div class="input-group">
-            <label>REPETITION (Volume) <span id="val-rep">0</span></label>
-            <input type="range" id="repSlider" min="1" max="500" value="50">
-        </div>
-        <div class="input-group">
-            <label>DENSITY (Crush) <span id="val-den">0</span></label>
-            <input type="range" id="denSlider" min="0" max="100" value="0">
-        </div>
-        <div class="input-group">
-            <label>DISTORTION (Skew) <span id="val-dis">0</span></label>
-            <input type="range" id="disSlider" min="0" max="100" value="0">
-        </div>
-
-        <button id="record-btn">Record Breaking Point</button>
-    </div>
-
-    <div id="visualization-wall">
-        <h2 style="width:100%">COLLECTIVE THRESHOLDS</h2>
-    </div>
-
-    <script>
-        const socket = io();
-
-        // DOM 元素
-        const inputs = {
-            word: document.getElementById('wordInput'),
-            rep: document.getElementById('repSlider'),
-            den: document.getElementById('denSlider'),
-            dis: document.getElementById('disSlider'),
-        };
-        const displays = {
-            rep: document.getElementById('val-rep'),
-            den: document.getElementById('val-den'),
-            dis: document.getElementById('val-dis'),
-        };
-        const preview = document.getElementById('preview-text');
-        const wall = document.getElementById('visualization-wall');
-        const btn = document.getElementById('record-btn');
-
-        // 存储所有数据用于可视化
-        let allData = [];
-        let selectedSample = null;
-
-        // --- 核心算法保持不变 ---
-        function generateDistortedHTML(word, count, dis) {
-            let html = '';
-            let safeCount = count > 600 ? 600 : count; 
-            
-            for(let i=0; i<safeCount; i++) {
-                let style = '';
-                if (dis > 0) {
-                    const skew = (Math.random() - 0.5) * dis / 1.5;
-                    const scaleY = 1 + (Math.random() * dis / 100);
-                    const translateY = (Math.random() - 0.5) * (dis / 3);
-                    style = `style="transform: skew(${skew}deg) scaleY(${scaleY}) translateY(${translateY}px)"`;
-                }
-                html += `<span class="distorted-word" ${style}>${word} </span>`;
-            }
-            return html;
-        }
-
-        function generateStyle(params) {
-            const den = parseInt(params.density);
-            const dis = parseInt(params.distortion);
-            return {
-                letterSpacing: (0 - (den / 10)) + 'px', 
-                lineHeight: (1.2 - (den / 80)),
-                color: (dis > 85) ? '#d00' : '#1a1a1a'
-            };
-        }
-
-        function updateLivePreview() {
-            const word = inputs.word.value;
-            const rep = parseInt(inputs.rep.value);
-            const den = inputs.den.value;
-            const dis = parseInt(inputs.dis.value);
-            
-            displays.rep.innerText = rep;
-            displays.den.innerText = den + '%';
-            displays.dis.innerText = dis + '%';
-            
-            const htmlContent = generateDistortedHTML(word, rep, dis);
-            preview.innerHTML = htmlContent;
-            
-            const styles = generateStyle({ density: den, distortion: dis });
-            Object.assign(preview.style, styles);
-        }
-
-        Object.values(inputs).forEach(el => el.addEventListener('input', updateLivePreview));
-        updateLivePreview();
-
-        // --- 提交数据 ---
-        btn.addEventListener('click', () => {
-            console.log('>>> Button clicked!');
-            
-            const data = {
-                word: inputs.word.value,
-                repetition: inputs.rep.value,
-                density: inputs.den.value,
-                distortion: inputs.dis.value,
-            };
-            
-            console.log('>>> Sending data:', data);
-            socket.emit('submit_threshold', data);
-            
-            const originalText = btn.innerText;
-            btn.innerText = "RECORDED";
-            btn.style.background = "#d00";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = ""; 
-            }, 1000);
-        });
-
-        // --- 删除功能 ---
-
-        // 1. 创建清空所有数据按钮
-        const clearBtn = document.createElement('button');
-        clearBtn.innerText = 'Clear All Data';
-        clearBtn.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: #ff4444;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: bold;
-            z-index: 1000;
-        `;
-        clearBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
-                socket.emit('clear_all_data');
-            }
-        });
-        document.body.appendChild(clearBtn);
-
-        // 2. 监听清空完成
-        socket.on('data_cleared', () => {
-            allData = [];
-            renderVisualization();
-            alert('All data cleared!');
-        });
-
-        // 3. 监听单个删除完成
-        socket.on('entry_deleted', (timestamp) => {
-            allData = allData.filter(item => item.timestamp !== timestamp);
-            renderVisualization();
-            // 如果当前显示的就是被删除的，关闭详情面板
-            if (selectedSample && selectedSample.timestamp === timestamp) {
-                document.getElementById('detail-panel').style.display = 'none';
-                selectedSample = null;
-            }
-        });
-
-        function sentimentToColor(sentiment) {
-            const normalized = Math.max(-5, Math.min(5, sentiment)); // 限制范围 -5 到 5
-            
-            if (Math.abs(normalized) < 0.5) {
-                // 中性：灰色
-                return { hue: 0, saturation: 0, lightness: 50 };
-            } else if (normalized < 0) {
-                // 负面：蓝色 (200-240度)
-                const intensity = Math.abs(normalized) / 5; // 0-1
-                return { hue: 220, saturation: 70 * intensity, lightness: 60 };
-            } else {
-                // 正面：红色 (0-20度)
-                const intensity = normalized / 5; // 0-1
-                return { hue: 10, saturation: 80 * intensity, lightness: 55 };
-            }
-        }
-
-        function renderVisualization() {
-            const title = wall.querySelector('h2');
-            wall.innerHTML = '';
-            wall.appendChild(title);    
-            
-            // 创建 canvas 容器
-            const vizCanvas = document.createElement('div');
-            vizCanvas.id = 'viz-canvas';
-            vizCanvas.style.cssText = `
-                width: 100%;
-                height: 500px;
-                position: relative;
-                background: #f5f5f5;
-                border: 1px solid #ccc;
-                overflow: hidden;
-            `;
-            
-            // 为每个数据点创建一个视觉单元
-            allData.forEach((data, index) => {
-                const dot = document.createElement('div');
-                dot.className = 'viz-dot';
-                
-                // 新的空间布局逻辑
-                // X轴: repetition (1-500)
-                const x = (data.params.repetition / 500) * 100; // 转换为百分比
-                
-                // Y轴: density (0-100)
-                const y = (data.params.density / 100) * 100;
-            
-                // Z轴: distortion (0-100) - 通过大小和透明度模拟深度
-                const distortionFactor = data.params.distortion / 100; // 0-1
-                const baseSize = 15;
-                const size = baseSize + (distortionFactor * 25); // 15-40px，distortion越大越大
-                
-                // 颜色：基于 sentiment (-5 到 5)
-                const sentimentValue = data.analysis ? data.analysis.sentiment : 0;
-                const color = sentimentToColor(sentimentValue);
-                
-                // 透明度：基于情感强度
-                const sentimentIntensity = Math.abs(sentimentValue) / 5; // 0-1
-                const opacity = 0.4 + (sentimentIntensity * 0.6); // 0.4-1.0
-                
-                dot.style.cssText = `
-                    position: absolute;
-                    left: ${x}%;
-                    top: ${y}%;
-                    width: ${size}px;
-                    height: ${size}px;
-                    background: hsla(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${opacity});
-                    border-radius: 50%;
-                    cursor: pointer;
-                    transition: transform 0.2s;
-                    transform: translate(-50%, -50%);
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                `;      
-                        
-                // dot.addEventListener('mouseenter', () => {
-                //     dot.style.transform = 'translate(-50%, -50%) scale(1.3)';
-                // });
-                
-                // dot.addEventListener('mouseleave', () => {
-                //     dot.style.transform = 'translate(-50%, -50%) scale(1)';
-                // });
-                
-                // dot.addEventListener('click', () => {
-                //     showDetail(data);
-                // });
-            dot.addEventListener('mouseenter', () => {
-                dot.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                dot.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-            });
-            
-            dot.addEventListener('mouseleave', () => {
-                dot.style.transform = 'translate(-50%, -50%) scale(1)';
-                dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            });
-            
-            dot.addEventListener('click', () => {
-                showDetail(data);
-            });
-                vizCanvas.appendChild(dot);
-            });
-            
-            wall.appendChild(vizCanvas);
-            
-            // 创建详情面板
-            const detailPanel = document.createElement('div');
-            detailPanel.id = 'detail-panel';
-            detailPanel.style.cssText = `
-                width: 100%;
-                min-height: 200px;
-                margin-top: 20px;
-                padding: 20px;
-                background: #fff;
-                border: 1px solid #ccc;
-                display: none;
-            `;
-            wall.appendChild(detailPanel);
-        }
-
-        // 显示选中样本的详细信息
-        function showDetail(data) {
-            selectedSample = data;
-            const panel = document.getElementById('detail-panel');
-            panel.style.display = 'block';
-            
-            // 生成预览
-            const safeRep = Math.min(data.params.repetition, 200);
-            const htmlContent = generateDistortedHTML(data.word, safeRep, data.params.distortion);
-            
-            const styles = generateStyle(data.params);
-            const styleString = Object.entries(styles).map(([k, v]) => `${k}: ${v}`).join('; ');
-            
-            const date = new Date(data.timestamp);
-            const timeStr = date.toLocaleString();
-            
-            panel.innerHTML = `
-                <div style="display: flex; gap: 20px; position: relative;">
-                    <button onclick="socket.emit('delete_entry', ${data.timestamp})" 
-                            style="position: absolute; top: 0; right: 0; padding: 5px 15px; 
-                                   background: #ff4444; color: white; border: none; cursor: pointer;
-                                   font-family: 'JetBrains Mono', monospace;">
-                        Delete This Sample
-                    </button>
-                    <div style="flex: 1;">
-                        <h3>SAMPLE DETAILS</h3>
-                        <p><strong>Word:</strong> "${data.word}"</p>
-                        <p><strong>Time:</strong> ${timeStr}</p>
-                        <p><strong>Repetition:</strong> ${data.params.repetition}</p>
-                        <p><strong>Density:</strong> ${data.params.density}%</p>
-                        <p><strong>Distortion:</strong> ${data.params.distortion}%</p>
-                        ${data.analysis ? `
-                            <h4 style="margin-top: 20px;">TEXT ANALYSIS</h4>
-                            <p><strong>Sentiment:</strong> ${data.analysis.sentiment.toFixed(2)} 
-                               ${data.analysis.sentiment > 0.5 ? '(Positive)' : 
-                                 data.analysis.sentiment < -0.5 ? '(Negative)' : '(Neutral)'}</p>
-                            <p><strong>Category:</strong> ${data.analysis.category}</p>
-                        ` : ''}
-                    </div>
-                    <div style="flex: 2; overflow: hidden; max-height: 300px; border: 1px solid #ddd; padding: 10px;">
-                        <div style="${styleString} font-size: 12px;">${htmlContent}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Socket 监听
-        socket.on('load_history', (history) => {
-            allData = history;
-            renderVisualization();
-        });
-
-        socket.on('new_data_point', (data) => {
-            allData.push(data);
-            renderVisualization();
-        });
-    </script>
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -372,7 +15,7 @@
         
         <div class="input-group">
             <label>Input a word you like:</label>
-            <input type="text" id="wordInput" value="WORK" maxlength="20">
+            <input type="text" id="wordInput" value="All work and no play makes Jack a dull boy" maxlength="50">
         </div>
 
         <div id="live-preview">
@@ -381,7 +24,7 @@
 
         <div class="input-group">
             <label>Repetition<span id="val-rep">0</span></label>
-            <input type="range" id="repSlider" min="1" max="300" value="30">
+            <input type="range" id="repSlider" min="1" max="500" value="50">
         </div>
         <div class="input-group">
             <label>Density<span id="val-den">0</span></label>
@@ -406,7 +49,6 @@
     <script>
         const socket = io();
 
-        // DOM 元素
         const inputs = {
             word: document.getElementById('wordInput'),
             rep: document.getElementById('repSlider'),
@@ -491,7 +133,6 @@
             }, 1000);
         });
 
-        // --- 删除功能按钮 ---
         const clearBtn = document.createElement('button');
         clearBtn.innerText = 'Clear All Data';
         clearBtn.style.cssText = `
@@ -505,11 +146,8 @@
             }
         });
         document.body.appendChild(clearBtn);
-
-        // --- 2. 右侧可视化逻辑 (改为 Plotly 3D 地形图) ---
         
         function renderVisualization() {
-            // 如果没有数据，渲染一个空坐标轴
             let xData = [], yData = [], zData = [], textData = [];
             
             if (allData.length > 0) {
@@ -519,7 +157,6 @@
                  textData = allData.map(d => `Word: ${d.word}<br>Repetition: ${d.params.repetition}`);
             }
 
-            // 数据 Trace
             const trace = {
                 x: xData,
                 y: yData,
