@@ -24,7 +24,7 @@
 
         <div class="input-group">
             <label>Repetition<span id="val-rep">0</span></label>
-            <input type="range" id="repSlider" min="1" max="500" value="50">
+            <input type="range" id="repSlider" min="1" max="500" value="1">
         </div>
         <div class="input-group">
             <label>Density<span id="val-den">0</span></label>
@@ -66,6 +66,21 @@
 
         let allData = [];
         let selectedSample = null;
+
+        function calculateMaxRepetition() {
+            const word = inputs.word.value;
+            const previewHeight = preview.clientHeight;
+            const previewWidth = preview.clientWidth;
+
+            const approxWordWidth = 50;
+            const approxLineHeight = 20;
+            
+            const wordsPerLine = Math.floor(previewWidth / approxWordWidth);
+            const totalLines = Math.floor(previewHeight / approxLineHeight);
+            const maxWords = wordsPerLine * totalLines;
+
+            return Math.max(50, Math.min(500, maxWords));
+        }
 
         function generateDistortedHTML(word, count, dis) {
             let html = '';
@@ -111,8 +126,14 @@
             Object.assign(preview.style, styles);
         }
 
+        window.addEventListener('load', () => {
+            const maxRep = calculateMaxRepetition();
+            inputs.rep.max = maxRep;
+            console.log('Max repetition set to:', maxRep);
+        });
+
         Object.values(inputs).forEach(el => el.addEventListener('input', updateLivePreview));
-        updateLivePreview(); // 初始化左侧预览
+        updateLivePreview(); 
 
         // --- 提交数据 ---
         btn.addEventListener('click', () => {
@@ -171,7 +192,6 @@
                 hoverinfo: 'text+x+y+z'
             };
 
-            // 布局 Layout (黑夜模式)
             const layout = {
                 autosize: true,
                 paper_bgcolor: 'rgba(0,0,0,0)', // 透明背景
