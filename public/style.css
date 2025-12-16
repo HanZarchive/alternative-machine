@@ -1,0 +1,120 @@
+:root {
+    --bg-color: #f4f4e8;   
+    --ink-color: #1a1a1a;
+    --accent-color: #d00;
+    --panel-width: 40%;  
+}
+
+* { box-sizing: border-box; } 
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'JetBrains Mono', Courier, monospace;
+    background: var(--bg-color);
+    color: var(--ink-color);
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    overflow: hidden;
+}
+
+/* --- 左侧: 控制台 (保持原样) --- */
+#control-panel {
+    width: var(--panel-width);
+    min-width: var(--panel-width); 
+    height: 100%;
+    background: #ffffff;
+    border-right: 2px solid var(--ink-color); 
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; 
+    z-index: 10;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.05); 
+}
+
+/* 控件样式 (原版) */
+h1 { font-size: 1.2rem; margin-top: 0; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #000; padding-bottom: 10px;}
+h2 { width: 100%; font-size: 0.9rem; margin-top: 0; border-bottom: 1px solid #999; padding-bottom: 5px; margin-bottom: 20px;}
+
+.input-group { margin-bottom: 25px; }
+label { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase;}
+
+input[type="text"] {
+    width: 100%; padding: 12px; font-family: inherit; font-size: 16px;
+    background: #f4f4f4; border: 1px solid #000; outline: none;
+}
+input[type="text"]:focus { background: #fff; border-bottom: 4px solid #000; }
+
+input[type="range"] {
+    width: 100%; webkit-appearance: none; background: transparent;
+}
+input[type="range"]::-webkit-slider-thumb {
+    height: 18px; width: 12px; background: var(--ink-color);
+    cursor: pointer; margin-top: -8px; border-radius: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%; height: 2px; background: #ccc;
+}
+
+button#record-btn {
+    margin-top: auto; padding: 20px; background: var(--ink-color);
+    color: #fff; border: 2px solid #000; font-family: inherit;
+    font-size: 14px; font-weight: bold; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+}
+button#record-btn:hover { 
+    background: var(--accent-color); border-color: var(--accent-color);
+}
+
+/* --- 左侧预览框 (关键：恢复 distored-word 样式) --- */
+#live-preview {
+    width: 100%; height: 180px; margin-bottom: 30px;
+    border: 1px solid #999; background: var(--bg-color);
+    overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center;
+}
+.preview-content {
+    padding: 20px; width: 100%; height: 100%;
+    overflow: hidden; word-break: break-all; font-size: 14px;
+}
+.distorted-word {
+    display: inline-block; white-space: pre; transform-origin: center bottom;
+}
+
+/* --- 右侧: 数据墙 (改为黑色背景，适应 Plotly) --- */
+#visualization-wall {
+    flex: 1; 
+    height: 100%;
+    padding: 20px;
+    background-color: #000000; /* 改为黑色 */
+    color: #e0e0e0;            /* 文字改为浅灰 */
+    overflow: hidden; 
+    display: flex;
+    flex-direction: column;    /* 上下布局 */
+}
+
+/* Plotly 画布容器 */
+#viz-canvas {
+    width: 100%;
+    flex: 2; /* 占据主要空间 */
+    border-bottom: 1px solid #333;
+}
+
+/* 详情面板 */
+#detail-panel {
+    width: 100%;
+    flex: 1; /* 占据下方空间 */
+    margin-top: 10px;
+    padding: 20px;
+    background: #111; /* 深灰色背景 */
+    border: 1px solid #333;
+    overflow-y: auto;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #222; }
+::-webkit-scrollbar-thumb { background: #555; }
+::-webkit-scrollbar-thumb:hover { background: #888; }

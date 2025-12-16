@@ -1,0 +1,98 @@
+[
+  {
+    "id": "hraTC6mcQ-eruAbGAAAB",
+    "timestamp": 1765858522904,
+    "word": "like",
+    "params": {
+      "density": 30,
+      "repetition": 114,
+      "distortion": 18
+    },
+    "analysis": {
+      "sentiment": 2,
+      "wordCount": 1,
+      "hasEmotionalWords": true,
+      "category": "neutral"
+    }
+  },
+  {
+    "id": "hraTC6mcQ-eruAbGAAAB",
+    "timestamp": 1765858542376,
+    "word": "i love you",
+    "params": {
+      "density": 42,
+      "repetition": 80,
+      "distortion": 21
+    },
+    "analysis": {
+      "sentiment": 1,
+      "wordCount": 3,
+      "hasEmotionalWords": true,
+      "category": "expressive"
+    }
+  },
+  {
+    "id": "hraTC6mcQ-eruAbGAAAB",
+    "timestamp": 1765858587899,
+    "word": "forever",
+    "params": {
+      "density": 18,
+      "repetition": 102,
+      "distortion": 8
+    },
+    "analysis": {
+      "sentiment": 0,
+      "wordCount": 1,
+      "hasEmotionalWords": false,
+      "category": "neutral"
+    }
+  },
+  {
+    "id": "hraTC6mcQ-eruAbGAAAB",
+    "timestamp": 1765858610941,
+    "word": "forever",
+    "params": {
+      "density": 29,
+      "repetition": 312,
+      "distortion": 8
+    },
+    "analysis": {
+      "sentiment": 0,
+      "wordCount": 1,
+      "hasEmotionalWords": false,
+      "category": "neutral"
+    }
+  },
+  {
+    "id": "hraTC6mcQ-eruAbGAAAB",
+    "timestamp": 1765858619765,
+    "word": "forever",
+    "params": {
+      "density": 29,
+      "repetition": 312,
+      "distortion": 8
+    },
+    "analysis": {
+      "sentiment": 0,
+      "wordCount": 1,
+      "hasEmotionalWords": false,
+      "category": "neutral"
+    }
+  },
+  {
+    "id": "KF0MCiyv142WyDTZAAAD",
+    "timestamp": 1765858831347,
+    "word": "WORK",
+    "params": {
+      "density": 0,
+      "repetition": 90,
+      "distortion": 0
+    },
+    "analysis": {
+      "sentiment": 0,
+      "wordCount": 1,
+      "hasEmotionalWords": false,
+      "category": "neutral"
+    }
+  }
+]
