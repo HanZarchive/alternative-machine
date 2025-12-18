@@ -168,14 +168,81 @@
         });
         document.body.appendChild(clearBtn);
         
+        // function renderVisualization() {
+        //     let xData = [], yData = [], zData = [], textData = [];
+            
+        //     if (allData.length > 0) {
+        //          xData = allData.map(d => d.params.density);
+        //          yData = allData.map(d => d.params.distortion);
+        //          zData = allData.map(d => d.params.repetition);
+        //          textData = allData.map(d => `Word: ${d.word}<br>Repetition: ${d.params.repetition}`);
+        //     }
+
+        //     const trace = {
+        //         x: xData,
+        //         y: yData,
+        //         z: zData,
+        //         text: textData,
+        //         mode: 'markers',
+        //         type: 'mesh3d', 
+        //         intensity: zData, 
+        //         colorscale: 'Portland', 
+        //         opacity: 0.9,
+        //         flatshading: true,
+        //         hoverinfo: 'text+x+y+z'
+        //     };
+
+        //     const layout = {
+        //         autosize: true,
+        //         paper_bgcolor: 'rgba(0,0,0,0)', 
+        //         plot_bgcolor: 'rgba(0,0,0,0)',
+        //         margin: { l: 0, r: 0, b: 0, t: 0 },
+        //         scene: {
+        //             xaxis: { title: 'Density', color: '#888', gridcolor: '#444' },
+        //             yaxis: { title: 'Distortion', color: '#888', gridcolor: '#444' },
+        //             zaxis: { title: 'Repetition Limit', color: '#888', gridcolor: '#444' },
+        //             camera: { eye: {x: 1.5, y: 1.5, z: 1.2} }
+        //         }
+        //     };
+
+        //     const config = { displayModeBar: false, responsive: true };
+
+        //     Plotly.newPlot('viz-canvas', [trace], layout, config);
+
+        //     document.getElementById('viz-canvas').on('plotly_click', function(data){
+        //         const pointIndex = data.points[0].pointNumber;
+        //         showDetail(allData[pointIndex]);
+        //     });
+
+        //     if (!document.getElementById('detail-panel')) {
+        //          const panel = document.createElement('div');
+        //          panel.id = 'detail-panel';
+        //          panel.style.display = 'none';
+        //          wall.appendChild(panel);
+        //     }
+        // }
+
         function renderVisualization() {
-            let xData = [], yData = [], zData = [], textData = [];
+            let xData = [], yData = [], zData = [], textData = [], colorData = [];
             
             if (allData.length > 0) {
-                 xData = allData.map(d => d.params.density);
-                 yData = allData.map(d => d.params.distortion);
-                 zData = allData.map(d => d.params.repetition);
-                 textData = allData.map(d => `Word: ${d.word}<br>Repetition: ${d.params.repetition}`);
+                xData = allData.map(d => d.params.density);
+                yData = allData.map(d => d.params.distortion);
+                zData = allData.map(d => d.params.repetition);
+                
+                // 提取 sentiment 作为颜色数据
+                colorData = allData.map(d => {
+                    if (d.analysis && d.analysis.sentiment !== undefined) {
+                        return d.analysis.sentiment; // -5 到 +5
+                    }
+                    return 0; // 如果没有 sentiment，默认为中性
+                });
+                
+                textData = allData.map(d => 
+                    `Word: ${d.word}<br>` +
+                    `Repetition: ${d.params.repetition}<br>` +
+                    `Sentiment: ${d.analysis ? d.analysis.sentiment.toFixed(2) : 'N/A'}`
+                );
             }
 
             const trace = {
@@ -184,54 +251,71 @@
                 z: zData,
                 text: textData,
                 mode: 'markers',
-                type: 'mesh3d', // 使用 mesh3d 模拟地形
-                intensity: zData, // 颜色根据高度(Repetition)变化
-                colorscale: 'Portland', // 使用类似参考图的热力图配色
-                opacity: 0.9,
-                flatshading: true,
-                hoverinfo: 'text+x+y+z'
+                type: 'scatter3d',  // 改为 scatter3d，mesh3d 不适合显示离散点
+                marker: {
+                    size: 8,
+                    color: colorData,  // ← 改为基于 sentiment
+                    colorscale: [
+                        [0, '#2196F3'],    // 负面：蓝色
+                        [0.5, '#9E9E9E'],  // 中性：灰色
+                        [1, '#F44336']     // 正面：红色
+                    ],
+                    cmin: -5,  // sentiment 最小值
+                    cmax: 5,   // sentiment 最大值
+                    colorbar: {
+                        title: 'Sentiment',
+                        titleside: 'right',
+                        tickmode: 'linear',
+                        tick0: -5,
+                        dtick: 2.5,
+                        thickness: 15,
+                        len: 0.5,
+                        bgcolor: 'rgba(0,0,0,0.5)',
+                        tickfont: { color: '#888' },
+                        titlefont: { color: '#888' }
+                    },
+                    line: { color: '#fff', width: 1 }
+                },
+                hoverinfo: 'text'
             };
 
             const layout = {
                 autosize: true,
-                paper_bgcolor: 'rgba(0,0,0,0)', // 透明背景
+                paper_bgcolor: 'rgba(0,0,0,0)', 
                 plot_bgcolor: 'rgba(0,0,0,0)',
                 margin: { l: 0, r: 0, b: 0, t: 0 },
                 scene: {
                     xaxis: { title: 'Density', color: '#888', gridcolor: '#444' },
                     yaxis: { title: 'Distortion', color: '#888', gridcolor: '#444' },
-                    zaxis: { title: 'Repetition Limit', color: '#888', gridcolor: '#444' },
+                    zaxis: { title: 'Repetition Threshold', color: '#888', gridcolor: '#444' },
                     camera: { eye: {x: 1.5, y: 1.5, z: 1.2} }
                 }
             };
 
             const config = { displayModeBar: false, responsive: true };
 
-            // 绘制图表
             Plotly.newPlot('viz-canvas', [trace], layout, config);
 
-            // 绑定点击事件用于显示详情
             document.getElementById('viz-canvas').on('plotly_click', function(data){
                 const pointIndex = data.points[0].pointNumber;
-                showDetail(allData[pointIndex]);
+                if (pointIndex !== undefined && allData[pointIndex]) {
+                    showDetail(allData[pointIndex]);
+                }
             });
-            
-            // 确保详情面板存在（如果是空数据状态）
+
             if (!document.getElementById('detail-panel')) {
-                 const panel = document.createElement('div');
-                 panel.id = 'detail-panel';
-                 panel.style.display = 'none';
-                 wall.appendChild(panel);
+                const panel = document.createElement('div');
+                panel.id = 'detail-panel';
+                panel.style.display = 'none';
+                wall.appendChild(panel);
             }
         }
 
-        // 显示详情 (保留原来的 HTML 生成逻辑)
         function showDetail(data) {
             selectedSample = data;
             const panel = document.getElementById('detail-panel');
             panel.style.display = 'block';
-            
-            // 复用原有的 generateDistortedHTML 生成右下角的预览
+
             const safeRep = Math.min(data.params.repetition, 200);
             const htmlContent = generateDistortedHTML(data.word, safeRep, data.params.distortion);
             
@@ -262,7 +346,6 @@
             `;
         }
 
-        // --- Socket 监听 ---
         socket.on('load_history', (history) => {
             allData = history;
             renderVisualization();
@@ -289,8 +372,7 @@
                 selectedSample = null;
             }
         });
-        
-        // 窗口大小调整时自适应
+
         window.onresize = function() {
             Plotly.Plots.resize('viz-canvas');
         };
