@@ -94,5 +94,21 @@
       "hasEmotionalWords": false,
       "category": "neutral"
     }
+  },
+  {
+    "id": "1Dv3zx1_Lkv0gkYjAAAR",
+    "timestamp": 1765866250546,
+    "word": "All work and no play makes Jack a dull boy",
+    "params": {
+      "density": 42,
+      "repetition": 74,
+      "distortion": 64
+    },
+    "analysis": {
+      "sentiment": -0.3,
+      "wordCount": 10,
+      "hasEmotionalWords": true,
+      "category": "expressive"
+    }
   }
 ]
